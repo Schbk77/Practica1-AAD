@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent" android:layout_height="wrap_content"
+    android:padding="4.5dp">
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/ivCaratula"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="10dp"
+        android:src="@drawable/vinilo"
+        android:scaleType="fitXY" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/tvTitulo"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/ivCaratula"
+        android:layout_toEndOf="@+id/ivCaratula"
+        android:layout_marginTop="30dp"
+        android:layout_marginLeft="20dp"
+        android:textStyle="italic"
+        android:textColor="#ff3eb9e7"
+        android:textSize="16dp"
+        android:text="@string/hinttitulo" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/tvArtista"
+        android:layout_below="@+id/tvTitulo"
+        android:layout_toRightOf="@+id/ivCaratula"
+        android:layout_toEndOf="@+id/ivCaratula"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="15dp"
+        android:text="@string/hintartista"
+        android:fontFamily="sans-serif-light"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/tvAnio"
+        android:layout_below="@+id/tvArtista"
+        android:layout_toRightOf="@+id/ivCaratula"
+        android:layout_toEndOf="@+id/ivCaratula"
+        android:layout_marginLeft="20dp"
+        android:text="@string/hintanio"
+        android:fontFamily="sans-serif-light"/>
+</RelativeLayout>
