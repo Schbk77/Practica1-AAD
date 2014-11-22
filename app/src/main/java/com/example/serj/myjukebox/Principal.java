@@ -1,16 +1,21 @@
 package com.example.serj.myjukebox;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.Xml;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -25,10 +30,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-
 public class Principal extends Activity {
     private ArrayList<Disco> discos;                    //Variable donde almaceno la biblioteca de discos
     private Adaptador ad;                               //Adaptador para objetos de tipo Disco
+    private ListView lv;
 
     //PANTALLA PRINCIPAL
     @Override
@@ -36,9 +41,7 @@ public class Principal extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.principal);
         initComponents();
-        crearXMLysetDefaultCDs();//---------------------------------------------------------------crea discos por defecto
-        //crearXML();
-        leerXML();//--------------------------------------------------------------------------------leer xml si existe
+        //crearXMLysetDefaultCDs();
 
     }
 
@@ -57,8 +60,7 @@ public class Principal extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_anadir) {
-            tostada("Añadir", this);
-            //return anadir();----------------------------------------------------------------------añadir al xml y arraylist
+            return anadir();
         }
         return super.onOptionsItemSelected(item);
     }
@@ -85,28 +87,79 @@ public class Principal extends Activity {
         return super.onContextItemSelected(item);
     }
 
-    public void crearXML(){
+    private boolean anadir(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        final View entradaTexto = inflater.inflate(R.layout.dialog_anadir, null);
+        builder.setTitle("Nuevo disco");
+        builder.setView(entradaTexto);
+        final EditText et1 = (EditText)entradaTexto.findViewById(R.id.etTitulo);
+        final EditText et2 = (EditText)entradaTexto.findViewById(R.id.etArtista);
+        final EditText et3 = (EditText)entradaTexto.findViewById(R.id.etAnio);
+        final EditText et4 = (EditText)entradaTexto.findViewById(R.id.etGenero);
+        builder.setPositiveButton("Añadir", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                Disco nuevoDisco = new Disco();
+                nuevoDisco.setTitulo(et1.getText().toString());
+                nuevoDisco.setArtista(et2.getText().toString());
+                nuevoDisco.setAnio(et3.getText().toString());
+                nuevoDisco.setGenero(et4.getText().toString());
+                nuevoDisco.setCaratula(R.drawable.vinilo+"");
+                discos.add(nuevoDisco);
+                guardarXML();
+                ad.notifyDataSetChanged();
+            }
+        });
+        builder.setNegativeButton("Cancelar",null);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return true;
+    }
+
+    private void guardarXML (){
+        File file = new File(getExternalFilesDir(null), "archivo.xml");
+        FileOutputStream fosxml = null;
         try {
-            FileOutputStream fosxml = new FileOutputStream(new File(getExternalFilesDir(null),"archivo.xml"));
-            XmlSerializer docxml = Xml.newSerializer();
+            fosxml = new FileOutputStream(file);
+        }catch (FileNotFoundException e){
+            tostada("No existe el archivo", this);
+        }
+        XmlSerializer docxml = Xml.newSerializer();
+        try {
             docxml.setOutput(fosxml, "UTF-8");
-            docxml.startDocument(null, Boolean.valueOf(true));
+            docxml.startDocument(null, true);
             docxml.setFeature("http://xmlpull.org/v1/doc/features.html#indent-output", true);
             docxml.startTag(null, "discos");
+
+            for(int i = 0; i<discos.size(); i++){
+                docxml.startTag(null, "disco");
+                docxml.startTag(null, "titulo");
+                docxml.text(discos.get(i).getTitulo());
+                docxml.endTag(null, "titulo");
+                docxml.startTag(null, "artista");
+                docxml.text(discos.get(i).getArtista());
+                docxml.endTag(null, "artista");
+                docxml.startTag(null, "anio");
+                docxml.text(discos.get(i).getAnio());
+                docxml.endTag(null, "anio");
+                docxml.startTag(null, "genero");
+                docxml.text(discos.get(i).getGenero());
+                docxml.endTag(null, "genero");
+                docxml.startTag(null, "caratula");
+                docxml.text(discos.get(i).getCaratula());
+                docxml.endTag(null, "caratula");
+                docxml.endTag(null, "disco");
+            }
             docxml.endDocument();
             docxml.flush();
             fosxml.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
+        }catch (IOException e){
+
         }
     }
 
-    public void leerXML (){
-        Disco d = null;
+    private void leerXML (){
+        Disco d = new Disco();
         String etiqueta;
         XmlPullParser lectorxml = Xml.newPullParser();
         try {
@@ -146,12 +199,7 @@ public class Principal extends Activity {
                     }
                 }
                 evento = lectorxml.next();
-
-
             }
-
-
-
         } catch (XmlPullParserException e) {
             e.printStackTrace();
         } catch (FileNotFoundException e) {
@@ -159,14 +207,31 @@ public class Principal extends Activity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Log.v("Size: ",((Integer)discos.size()).toString());
-        ad.notifyDataSetChanged();
     }
 
     public void editarDeXML(){}
 
     public void borrarDeXML(){}
+
+    private void initComponents() {
+        discos = new ArrayList<Disco>();
+        leerXML();
+        lv = (ListView)findViewById(R.id.lvLista);
+        ad = new Adaptador(this, R.layout.lista, discos);
+        lv.setAdapter(ad);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                tostada("Clic:"+i, getApplicationContext());
+                //mostrarDisco(i);------------------------------------------------------------------mostrar datos del disco
+            }
+        });
+        registerForContextMenu(lv);
+    }
+
+    public static void tostada(String s, Context c){
+        Toast.makeText(c, s, Toast.LENGTH_SHORT).show();
+    }
 
     public void crearXMLysetDefaultCDs() {
 
@@ -179,21 +244,21 @@ public class Principal extends Activity {
             docxml.startTag(null, "discos");
 
             docxml.startTag(null, "disco");
-                docxml.startTag(null, "titulo");
-                    docxml.text("Lonerism");
-                docxml.endTag(null, "titulo");
-                docxml.startTag(null, "artista");
-                    docxml.text("Tame Impala");
-                docxml.endTag(null, "artista");
-                docxml.startTag(null, "anio");
-                    docxml.text("2012");
-                docxml.endTag(null, "anio");
-                docxml.startTag(null, "genero");
-                    docxml.text("Psychedelic");
-                docxml.endTag(null, "genero");
-                docxml.startTag(null, "caratula");
-                    docxml.text(R.drawable.lnrsm+"");
-                docxml.endTag(null, "caratula");
+            docxml.startTag(null, "titulo");
+            docxml.text("Lonerism");
+            docxml.endTag(null, "titulo");
+            docxml.startTag(null, "artista");
+            docxml.text("Tame Impala");
+            docxml.endTag(null, "artista");
+            docxml.startTag(null, "anio");
+            docxml.text("2012");
+            docxml.endTag(null, "anio");
+            docxml.startTag(null, "genero");
+            docxml.text("Psychedelic");
+            docxml.endTag(null, "genero");
+            docxml.startTag(null, "caratula");
+            docxml.text(R.drawable.lnrsm+"");
+            docxml.endTag(null, "caratula");
             docxml.endTag(null, "disco");
 
             docxml.startTag(null, "disco");
@@ -280,25 +345,5 @@ public class Principal extends Activity {
             e.printStackTrace();
         }
         tostada("XML Creado en:" + getExternalFilesDir(null).toString(), this);
-    }
-
-
-    private void initComponents() {
-        discos = new ArrayList<Disco>();
-        final ListView lv = (ListView)findViewById(R.id.lvLista);
-        ad = new Adaptador(this, R.layout.lista, discos);
-        lv.setAdapter(ad);
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                tostada("Clic:", getApplicationContext());
-                //mostrarDisco(i);------------------------------------------------------------------mostrar datos del disco
-            }
-        });
-        registerForContextMenu(lv);
-    }
-
-    public static void tostada(String s, Context c){
-        Toast.makeText(c, s, Toast.LENGTH_SHORT).show();
     }
 }
