@@ -1,8 +1,11 @@
 package com.example.serj.myjukebox;
 
-import java.io.Serializable;
+import android.os.Parcel;
+import android.os.Parcelable;
+import java.text.Collator;
+import java.util.Locale;
 
-public class Disco implements Comparable<Disco>, Serializable{
+public class Disco implements Comparable<Disco>, Parcelable{
 
     private String titulo;
     private String artista;
@@ -10,8 +13,14 @@ public class Disco implements Comparable<Disco>, Serializable{
     private String genero;
     private String caratula;
 
-    public Disco() {
-        this("", "", "", "", "");
+    public Disco() {}
+
+    public Disco(Parcel p){
+        this.titulo = p.readString();
+        this.artista = p.readString();
+        this.anio = p.readString();
+        this.genero = p.readString();
+        this.caratula = p.readString();
     }
 
     public Disco(String titulo, String artista, String anio, String genero, String caratula) {
@@ -64,11 +73,13 @@ public class Disco implements Comparable<Disco>, Serializable{
 
     @Override
     public int compareTo(Disco disco) {
-        if(this.titulo.compareTo(disco.titulo)<0) {
+        Collator coll = Collator.getInstance(Locale.getDefault());
+        int ct = coll.compare(this.titulo, disco.titulo);
+        if(ct < 0){
             return -1;
-        }else if(this.titulo.compareTo(disco.titulo)>0){
+        }else if(ct > 0){
             return 1;
-        }else{
+        }else {
             return 0;
         }
     }
@@ -102,5 +113,32 @@ public class Disco implements Comparable<Disco>, Serializable{
                 ", genero='" + genero + '\'' +
                 ", caratula=" + caratula +
                 '}';
+    }
+
+    public static final Parcelable.Creator<Disco> CREATOR =new Parcelable.Creator<Disco>(){
+
+        @Override
+        public Disco createFromParcel(Parcel source) {
+            return new Disco();
+        }
+
+        @Override
+        public Disco[] newArray(int size) {
+            return new Disco[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int flags) {
+        parcel.writeString(titulo);
+        parcel.writeString(artista);
+        parcel.writeString(anio);
+        parcel.writeString(genero);
+        parcel.writeString(caratula);
     }
 }

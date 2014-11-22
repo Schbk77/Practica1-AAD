@@ -24,7 +24,6 @@ public class Adaptador extends ArrayAdapter<Disco>{
     public static class ViewHolder {
         public TextView tv1, tv2, tv3;
         public ImageView iv;
-        public int posicion;
     }
 
     public Adaptador(Context context, int resource, ArrayList<Disco> objects) {
@@ -50,12 +49,16 @@ public class Adaptador extends ArrayAdapter<Disco>{
         }else{
             vh = (ViewHolder)convertView.getTag();
         }
-        vh.posicion = position;
         vh.tv1.setText(discos.get(position).getTitulo());
         vh.tv2.setText(discos.get(position).getArtista());
         vh.tv3.setText(discos.get(position).getAnio());
-        Bitmap myBitmap = BitmapFactory.decodeResource(contexto.getResources(), Integer.parseInt(discos.get(position).getCaratula()));
-        vh.iv.setImageBitmap(myBitmap);
+        try{
+            Bitmap myBitmap = BitmapFactory.decodeResource(contexto.getResources(), Integer.parseInt(discos.get(position).getCaratula()));
+            vh.iv.setImageBitmap(myBitmap);
+        }catch (NumberFormatException e){
+
+        }
+
 
         return convertView;
     }
