@@ -31,32 +31,40 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class Principal extends Activity {
-    private ArrayList<Disco> discos;                    //Variable donde almaceno la biblioteca de discos
-    private Adaptador ad;                               //Adaptador para objetos de tipo Disco
-    private ListView lv;
-    private final int EDITAR_DISCO = 1;
 
-    //PANTALLA PRINCIPAL
+    /**********************************************************************************************/
+    /**************************************VARIABLES***********************************************/
+    /**********************************************************************************************/
+
+    private ArrayList<Disco> discos;               //Variable donde almaceno la biblioteca de discos
+    private Adaptador ad;                          //Adaptador para objetos de tipo Disco
+    private ListView lv;                           //ListView del layout
+    private final int EDITAR_DISCO = 1;            //Código de la actividad Editar
+
+    /**********************************************************************************************/
+    /**************************************ON...***************************************************/
+    /**********************************************************************************************/
+
+    //PANTALLA PRINCIPAL____________________________________________________________________________
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Inicializa los componentes del layout principal
         super.onCreate(savedInstanceState);
         setContentView(R.layout.principal);
         initComponents();
     }
 
-    //ACTION BAR
+    //ACTION BAR____________________________________________________________________________________
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Infla el menu de la ActionBar
         getMenuInflater().inflate(R.menu.principal, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // Realiza la acción que se elija del menú de la ActionBar
         int id = item.getItemId();
         if (id == R.id.action_anadir) {
             return anadir();
@@ -64,9 +72,10 @@ public class Principal extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    //MENU CONTEXTUAL
+    //MENU CONTEXTUAL_______________________________________________________________________________
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        //Infla el menu que se visualiza al hacer longClick en un elemento del ListView
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menuopciones, menu);
@@ -74,6 +83,7 @@ public class Principal extends Activity {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        //Realiza la acción que se elija del menu contextual
         int id = item.getItemId();
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         int posicion = info.position;
@@ -85,39 +95,65 @@ public class Principal extends Activity {
         return super.onContextItemSelected(item);
     }
 
+    //RESULTADO LANZAR INTENT_______________________________________________________________________
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //Segun el resultado de otra actividad, realiza una acción determinada
         super.onActivityResult(requestCode, resultCode, data);
         if(resultCode==Activity.RESULT_OK){
-            int aux = data.getIntExtra("pos", 0);
-            String titulo = data.getStringExtra("titulo");
-            String artista = data.getStringExtra("artista");
-            String anio = data.getStringExtra("anio");
-            String genero = data.getStringExtra("genero");
-            String caratula = data.getStringExtra("caratula");
+            int aux = data.getIntExtra(getString(R.string.tagPosicion), 0);
+            String titulo = data.getStringExtra(getString(R.string.tagTitulo));
+            String artista = data.getStringExtra(getString(R.string.tagArtista));
+            String anio = data.getStringExtra(getString(R.string.tagAnio));
+            String genero = data.getStringExtra(getString(R.string.tagGenero));
+            String caratula = data.getStringExtra(getString(R.string.tagCaratula));
             Disco d = new Disco(titulo, artista, anio, genero, caratula);
             switch (requestCode){
                 case EDITAR_DISCO:{
-                    discos.set(aux, d);
-                    guardarXML();
-                    ad.notifyDataSetChanged();
+                    //Controla registros únicos y modifica los datos del disco
+                    if(!discos.contains(d) || !discos.get(aux).getCaratula().equals(caratula)){
+                        discos.set(aux, d);
+                        guardarXML();
+                        ad.notifyDataSetChanged();
+                        tostada(getString(R.string.discomodificado), this);
+                    }else{
+                        tostada(getString(R.string.discoExiste), this);
+                    }
                 }
             }
         }
     }
 
+    //ORIENTACIÓN___________________________________________________________________________________
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        //Recupera el Bundle guardado
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        //Guarda en el Bundle con el cambio de estado
+        super.onSaveInstanceState(outState);
+    }
+
+    /**********************************************************************************************/
+    /***************************************EDICIÓN************************************************/
+    /**********************************************************************************************/
+
     private boolean anadir(){
+        //Método que crea un AlertDialog con un layout personalizado y añade un disco nuevo
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = LayoutInflater.from(this);
         final View entradaTexto = inflater.inflate(R.layout.dialog_anadir, null);
-        builder.setTitle("Nuevo disco");
+        builder.setTitle(getString(R.string.nuevodisco));
         builder.setView(entradaTexto);
         final EditText et1 = (EditText)entradaTexto.findViewById(R.id.etTitulo);
         final EditText et2 = (EditText)entradaTexto.findViewById(R.id.etArtista);
         final EditText et3 = (EditText)entradaTexto.findViewById(R.id.etAnio);
         final EditText et4 = (EditText)entradaTexto.findViewById(R.id.etGenero);
-        builder.setPositiveButton("Añadir", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(getString(R.string.btanadir), new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
+                //Controla que los campos del EditText no estén vacios
                 if (!((String)et1.getText().toString()).isEmpty() &&
                         !((String)et2.getText().toString()).isEmpty() &&
                         !((String)et3.getText().toString()).isEmpty() &&
@@ -128,22 +164,27 @@ public class Principal extends Activity {
                     nuevoDisco.setAnio(et3.getText().toString());
                     nuevoDisco.setGenero(et4.getText().toString());
                     nuevoDisco.setCaratula(R.drawable.vinilo+"");
-                    discos.add(nuevoDisco);
-                    guardarXML();
-                    ad.notifyDataSetChanged();
+                    //Controla registros únicos y añade un Disco nuevo
+                    if(!discos.contains(nuevoDisco)){
+                        discos.add(nuevoDisco);
+                        guardarXML();
+                        ad.notifyDataSetChanged();
+                    }else {
+                        tostada(getString(R.string.discoExiste), getApplicationContext());
+                    }
                 }else{
                     tostada(getString(R.string.tostadaaniadirerror), getApplicationContext());
                 }
-
             }
         });
-        builder.setNegativeButton("Cancelar",null);
+        builder.setNegativeButton(getString(R.string.btcancelar),null);
         AlertDialog dialog = builder.create();
         dialog.show();
         return true;
     }
 
     public boolean borrar(final int pos){
+        //Método que crea un AlertDialog que nos permite borrar un Disco
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setMessage(R.string.dialog_message);
         alert.setTitle(R.string.dialog_title);
@@ -152,7 +193,7 @@ public class Principal extends Activity {
                 discos.remove(pos);
                 guardarXML();
                 ad.notifyDataSetChanged();
-                tostada("Disco borrado", getApplicationContext());
+                tostada(getString(R.string.discoborrado), getApplicationContext());
             }
         });
         alert.setNegativeButton(R.string.no,null);
@@ -162,21 +203,40 @@ public class Principal extends Activity {
     }
 
     public boolean editar(final int pos){
+        //Método que lanza una actividad para obtener un resultado
         Intent nuevoIntent = new Intent(this, Editar.class);
         Bundle b = new Bundle();
-        b.putString("titulo", discos.get(pos).getTitulo());
-        b.putString("artista", discos.get(pos).getArtista());
-        b.putString("anio", discos.get(pos).getAnio());
-        b.putString("genero", discos.get(pos).getGenero());
-        b.putString("caratula", discos.get(pos).getCaratula());
-        b.putInt("pos", pos);
-        b.putParcelableArrayList("ArrayList", discos);
+        b.putString(getString(R.string.tagTitulo), discos.get(pos).getTitulo());
+        b.putString(getString(R.string.tagArtista), discos.get(pos).getArtista());
+        b.putString(getString(R.string.tagAnio), discos.get(pos).getAnio());
+        b.putString(getString(R.string.tagGenero), discos.get(pos).getGenero());
+        b.putString(getString(R.string.tagCaratula), discos.get(pos).getCaratula());
+        b.putInt(getString(R.string.tagPosicion), pos);
         nuevoIntent.putExtras(b);
         startActivityForResult(nuevoIntent, EDITAR_DISCO);
         return true;
     }
 
+    public void mostrar(final int pos){
+        //Método que lanza una actividad pasando datos
+        Intent nuevoIntent = new Intent(this, Mostrar.class);
+        Bundle b = new Bundle();
+        b.putString(getString(R.string.tagTitulo), discos.get(pos).getTitulo());
+        b.putString(getString(R.string.tagArtista), discos.get(pos).getArtista());
+        b.putString(getString(R.string.tagAnio), discos.get(pos).getAnio());
+        b.putString(getString(R.string.tagGenero), discos.get(pos).getGenero());
+        b.putString(getString(R.string.tagCaratula), discos.get(pos).getCaratula());
+        nuevoIntent.putExtras(b);
+        startActivity(nuevoIntent);
+    }
+
+    /**********************************************************************************************/
+    /*****************************************XML**************************************************/
+    /**********************************************************************************************/
+
     private void guardarXML (){
+        //Actualiza el archivo .xml guardado en la memoria externa privada
+        //Recoge los datos almacenados en el ArrayList para actualizar el .xml
         File file = new File(getExternalFilesDir(null), "archivo.xml");
         FileOutputStream fosxml = null;
         try {
@@ -219,6 +279,8 @@ public class Principal extends Activity {
     }
 
     private void leerXML (){
+        //Lee desde el archivo .xml guardado en la memoria externa privada
+        //Guarda en el ArrayList los Discos almacenados en el archivo
         Disco d = new Disco();
         String etiqueta;
         XmlPullParser lectorxml = Xml.newPullParser();
@@ -269,7 +331,13 @@ public class Principal extends Activity {
         }
     }
 
+    /**********************************************************************************************/
+    /***********************************MÉTODOS AUXILIARES*****************************************/
+    /**********************************************************************************************/
+
     private void initComponents() {
+        //Inicializa el ArrayList con los datos del archivo .xml
+        //Añade el Adaptador al ListView
         discos = new ArrayList<Disco>();
         leerXML();
         lv = (ListView)findViewById(R.id.lvLista);
@@ -278,8 +346,7 @@ public class Principal extends Activity {
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                tostada("Clic:"+i, getApplicationContext());
-                //mostrarDisco(i);------------------------------------------------------------------mostrar datos del disco
+                mostrar(i);
             }
         });
         registerForContextMenu(lv);
@@ -315,7 +382,7 @@ public class Principal extends Activity {
         return true;
     }
 
-    public void crearXMLysetDefaultCDs() {
+    /*public void crearXMLysetDefaultCDs() {
 
         try {
             FileOutputStream fosxml = new FileOutputStream(new File(getExternalFilesDir(null),"archivo.xml"));
@@ -427,5 +494,5 @@ public class Principal extends Activity {
             e.printStackTrace();
         }
         tostada("XML Creado en:" + getExternalFilesDir(null).toString(), this);
-    }
+    }*/
 }

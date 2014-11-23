@@ -17,18 +17,29 @@ import java.util.ArrayList;
 public class Editar extends Activity {
 
     private String titulo, artista, anio, genero, caratula;
-    private ArrayList<Disco> discos;
     private int aux;
     private EditText et1, et2, et3, et4;
     private ImageButton ib;
     private static int RESULT_LOAD_IMAGE = 1;
-    private String picturePath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.dialog_editar);
         initComponents();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(getString(R.string.tagCaratula), caratula);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        caratula = savedInstanceState.getString(getString(R.string.tagCaratula));
+        setImagen(caratula);
     }
 
     private void initComponents(){
@@ -52,22 +63,18 @@ public class Editar extends Activity {
     private void getExtras(){
         Bundle b = getIntent().getExtras();
         if(b != null){
-            titulo = b.getString("titulo");
-            artista = b.getString("artista");
-            anio = b.getString("anio");
-            genero = b.getString("genero");
-            caratula = b.getString("caratula");
-            discos = b.getParcelableArrayList("ArrayList");
-            aux = b.getInt("pos");
+            titulo = b.getString(getString(R.string.tagTitulo));
+            artista = b.getString(getString(R.string.tagArtista));
+            anio = b.getString(getString(R.string.tagAnio));
+            genero = b.getString(getString(R.string.tagGenero));
+            caratula = b.getString(getString(R.string.tagCaratula));
+            aux = b.getInt(getString(R.string.tagPosicion));
         }
         et1.setText(titulo);
         et2.setText(artista);
         et3.setText(anio);
         et4.setText(genero);
-        try{
-            Bitmap myBitmap = BitmapFactory.decodeResource(getResources(), Integer.parseInt(caratula));
-            ib.setImageBitmap(myBitmap);
-        }catch (NumberFormatException e){}
+        setImagen(caratula);
     }
 
     public void guardarCambios(View view){
@@ -79,17 +86,15 @@ public class Editar extends Activity {
             artista = et2.getText().toString();
             anio = et3.getText().toString();
             genero = et4.getText().toString();
-            if(picturePath != null){
-                caratula = picturePath;
-            }
+
             Intent i = new Intent();
             Bundle bundle = new Bundle();
-            bundle.putInt("pos", aux);
-            bundle.putString("titulo", titulo);
-            bundle.putString("artista", artista);
-            bundle.putString("anio", anio);
-            bundle.putString("genero", genero);
-            bundle.putString("caratula", caratula);
+            bundle.putInt(getString(R.string.tagPosicion), aux);
+            bundle.putString(getString(R.string.tagTitulo), titulo);
+            bundle.putString(getString(R.string.tagArtista), artista);
+            bundle.putString(getString(R.string.tagAnio), anio);
+            bundle.putString(getString(R.string.tagGenero), genero);
+            bundle.putString(getString(R.string.tagCaratula), caratula);
             i.putExtras(bundle);
             setResult(RESULT_OK, i);
             finish();
@@ -108,10 +113,22 @@ public class Editar extends Activity {
             Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
             cursor.moveToFirst();
             int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-            picturePath = cursor.getString(columnIndex);
+            caratula = cursor.getString(columnIndex);
             cursor.close();
-            Bitmap myBitmap = BitmapFactory.decodeFile(picturePath);
+            Bitmap myBitmap = BitmapFactory.decodeFile(caratula);
             ib.setImageBitmap(myBitmap);
         }
+    }
+
+    private void setImagen(String caratula){
+        try{
+            if(Principal.isInteger(caratula)){
+                Bitmap myBitmap = BitmapFactory.decodeResource(getResources(), Integer.parseInt(caratula));
+                ib.setImageBitmap(myBitmap);
+            }else{
+                Bitmap bitmap = BitmapFactory.decodeFile(caratula);
+                ib.setImageBitmap(bitmap);
+            }
+        }catch (NumberFormatException e){}
     }
 }
