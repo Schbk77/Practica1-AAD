@@ -34,6 +34,7 @@ public class Principal extends Activity {
     private ArrayList<Disco> discos;                    //Variable donde almaceno la biblioteca de discos
     private Adaptador ad;                               //Adaptador para objetos de tipo Disco
     private ListView lv;
+    private final int EDITAR_DISCO = 1;
 
     //PANTALLA PRINCIPAL
     @Override
@@ -41,8 +42,6 @@ public class Principal extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.principal);
         initComponents();
-        //crearXMLysetDefaultCDs();
-
     }
 
     //ACTION BAR
@@ -77,14 +76,34 @@ public class Principal extends Activity {
     public boolean onContextItemSelected(MenuItem item) {
         int id = item.getItemId();
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        int posicion = info.position;
         if(id == R.id.opEditar){
-            tostada("Editar:"+info.position, this);
-            //return editar(info.position);---------------------------------------------------------editar item segun posicion
+            return editar(posicion);
         }else if(id == R.id.opBorrar) {
-            tostada("Borrar:"+info.position, this);
-            //return borrar(info.position);---------------------------------------------------------borrar item segun posicion
+            return borrar(posicion);
         }
         return super.onContextItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode==Activity.RESULT_OK){
+            int aux = data.getIntExtra("pos", 0);
+            String titulo = data.getStringExtra("titulo");
+            String artista = data.getStringExtra("artista");
+            String anio = data.getStringExtra("anio");
+            String genero = data.getStringExtra("genero");
+            String caratula = data.getStringExtra("caratula");
+            Disco d = new Disco(titulo, artista, anio, genero, caratula);
+            switch (requestCode){
+                case EDITAR_DISCO:{
+                    discos.set(aux, d);
+                    guardarXML();
+                    ad.notifyDataSetChanged();
+                }
+            }
+        }
     }
 
     private boolean anadir(){
@@ -99,20 +118,61 @@ public class Principal extends Activity {
         final EditText et4 = (EditText)entradaTexto.findViewById(R.id.etGenero);
         builder.setPositiveButton("Añadir", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                Disco nuevoDisco = new Disco();
-                nuevoDisco.setTitulo(et1.getText().toString());
-                nuevoDisco.setArtista(et2.getText().toString());
-                nuevoDisco.setAnio(et3.getText().toString());
-                nuevoDisco.setGenero(et4.getText().toString());
-                nuevoDisco.setCaratula(R.drawable.vinilo+"");
-                discos.add(nuevoDisco);
-                guardarXML();
-                ad.notifyDataSetChanged();
+                if (!((String)et1.getText().toString()).isEmpty() &&
+                        !((String)et2.getText().toString()).isEmpty() &&
+                        !((String)et3.getText().toString()).isEmpty() &&
+                        !((String)et4.getText().toString()).isEmpty()) {
+                    Disco nuevoDisco = new Disco();
+                    nuevoDisco.setTitulo(et1.getText().toString());
+                    nuevoDisco.setArtista(et2.getText().toString());
+                    nuevoDisco.setAnio(et3.getText().toString());
+                    nuevoDisco.setGenero(et4.getText().toString());
+                    nuevoDisco.setCaratula(R.drawable.vinilo+"");
+                    discos.add(nuevoDisco);
+                    guardarXML();
+                    ad.notifyDataSetChanged();
+                }else{
+                    tostada(getString(R.string.tostadaaniadirerror), getApplicationContext());
+                }
+
             }
         });
         builder.setNegativeButton("Cancelar",null);
         AlertDialog dialog = builder.create();
         dialog.show();
+        return true;
+    }
+
+    public boolean borrar(final int pos){
+        AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        alert.setMessage(R.string.dialog_message);
+        alert.setTitle(R.string.dialog_title);
+        alert.setPositiveButton(R.string.si, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                discos.remove(pos);
+                guardarXML();
+                ad.notifyDataSetChanged();
+                tostada("Disco borrado", getApplicationContext());
+            }
+        });
+        alert.setNegativeButton(R.string.no,null);
+        AlertDialog dialog = alert.create();
+        dialog.show();
+        return true;
+    }
+
+    public boolean editar(final int pos){
+        Intent nuevoIntent = new Intent(this, Editar.class);
+        Bundle b = new Bundle();
+        b.putString("titulo", discos.get(pos).getTitulo());
+        b.putString("artista", discos.get(pos).getArtista());
+        b.putString("anio", discos.get(pos).getAnio());
+        b.putString("genero", discos.get(pos).getGenero());
+        b.putString("caratula", discos.get(pos).getCaratula());
+        b.putInt("pos", pos);
+        b.putParcelableArrayList("ArrayList", discos);
+        nuevoIntent.putExtras(b);
+        startActivityForResult(nuevoIntent, EDITAR_DISCO);
         return true;
     }
 
@@ -209,10 +269,6 @@ public class Principal extends Activity {
         }
     }
 
-    public void editarDeXML(){}
-
-    public void borrarDeXML(){}
-
     private void initComponents() {
         discos = new ArrayList<Disco>();
         leerXML();
@@ -229,8 +285,34 @@ public class Principal extends Activity {
         registerForContextMenu(lv);
     }
 
+    //Método para mostrar una tostada con el string que queramos en cualquier Clase
     public static void tostada(String s, Context c){
         Toast.makeText(c, s, Toast.LENGTH_SHORT).show();
+    }
+
+    //Método para saber si un String es un Integer
+    public static boolean isInteger(String str) {
+        if (str == null) {
+            return false;
+        }
+        int length = str.length();
+        if (length == 0) {
+            return false;
+        }
+        int i = 0;
+        if (str.charAt(0) == '-') {
+            if (length == 1) {
+                return false;
+            }
+            i = 1;
+        }
+        for (; i < length; i++) {
+            char c = str.charAt(i);
+            if (c <= '/' || c >= ':') {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void crearXMLysetDefaultCDs() {

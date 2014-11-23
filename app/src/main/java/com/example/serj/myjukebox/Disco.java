@@ -2,10 +2,11 @@ package com.example.serj.myjukebox;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+
 import java.text.Collator;
 import java.util.Locale;
 
-public class Disco implements Comparable<Disco>, Parcelable{
+public class Disco implements Comparable<Disco>,  Parcelable{
 
     private String titulo;
     private String artista;
@@ -119,7 +120,7 @@ public class Disco implements Comparable<Disco>, Parcelable{
 
         @Override
         public Disco createFromParcel(Parcel source) {
-            return new Disco();
+            return new Disco(source);
         }
 
         @Override

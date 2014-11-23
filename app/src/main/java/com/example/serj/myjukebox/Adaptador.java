@@ -3,7 +3,6 @@ package com.example.serj.myjukebox;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.File;
 import java.util.ArrayList;
 
 public class Adaptador extends ArrayAdapter<Disco>{
@@ -53,13 +51,18 @@ public class Adaptador extends ArrayAdapter<Disco>{
         vh.tv2.setText(discos.get(position).getArtista());
         vh.tv3.setText(discos.get(position).getAnio());
         try{
-            Bitmap myBitmap = BitmapFactory.decodeResource(contexto.getResources(), Integer.parseInt(discos.get(position).getCaratula()));
-            vh.iv.setImageBitmap(myBitmap);
-        }catch (NumberFormatException e){
+            String caratula = discos.get(position).getCaratula();
+            if(Principal.isInteger(caratula)){
+                //Si la imagen es un drawable del proyecto uso decodeResource con un Integer del ID del Drawable
+                Bitmap myBitmap = BitmapFactory.decodeResource(contexto.getResources(), Integer.parseInt(discos.get(position).getCaratula()));
+                vh.iv.setImageBitmap(myBitmap);
+            }else{
+                //Si la imagen es de la memoria del dispositivo uso decodeFile con la ruta de la imagen
+                Bitmap bitmap = BitmapFactory.decodeFile(caratula);
+                vh.iv.setImageBitmap(bitmap);
+            }
 
-        }
-
-
+        }catch (NumberFormatException e){}
         return convertView;
     }
 }
